@@ -1,19 +1,13 @@
-document.addEventListener('DOMContentLoaded', initializeProfileDropdown);
-
-function initializeProfileDropdown() {
-    const dropdownButton = document.getElementById('profileDropdownButton');
-    const dropdownMenu = document.getElementById('profileDropdown');
-
-    if (dropdownButton && dropdownMenu) {
-        dropdownButton.addEventListener('click', function() {
-            dropdownMenu.classList.toggle('hidden');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!dropdownButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
-                dropdownMenu.classList.add('hidden');
-            }
-        });
+   // Simple toggle functionality for mobile menu and profile dropdown
+   document.addEventListener('click', function(event) {
+    const profileMenu = document.getElementById('profileMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    if (!event.target.closest('#profileMenu') && !event.target.closest('button')) {
+        profileMenu?.classList.add('hidden');
     }
-}
+    
+    if (!event.target.closest('#mobileMenu') && !event.target.closest('button')) {
+        mobileMenu?.classList.add('hidden');
+    }
+});

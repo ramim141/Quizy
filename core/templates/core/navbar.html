@@ -1,91 +1,132 @@
 {% load static %}
 
-<nav class="bg-indigo-700 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
-        <div class="flex items-center">
-          <a href="#" class="text-xl font-semibold">Quizy</a>
-          <div class="hidden md:block">
-            <div class="ml-10 flex items-baseline space-x-4">
-              <a href="#" class="text-white hover:bg-indigo-600 px-3 py-2 rounded-md text-sm font-medium">My Quizzes</a>
-              <a href="#" class="text-white hover:bg-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Create Quiz</a>
-              <a href="#" class="text-white hover:bg-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Available Quizzes</a>
-              <a href="#" class="text-white hover:bg-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Leaderboard</a>
+<nav class="bg-gradient-to-r from-indigo-800 via-purple-700 to-indigo-800 text-white shadow-lg">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center">
+                <div href="#" class="text-xl font-semibold flex items-center">
+                    <div class="h-8 w-8 mr-2 bg-white rounded-full flex items-center justify-center">
+                        <img src="{% static 'images/logo.png' %}" class="h-6 w-6" alt="Logo">
+                    </div>
+                    <span class="text-white font-bold">Quizy</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#" class="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition duration-150">My Quizzes</a>
+                        <a href="#" class="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition duration-150">Create Quiz</a>
+                        <a href="#" class="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition duration-150">Available Quizzes</a>
+                        <a href="#" class="text-white hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium transition duration-150">Leaderboard</a>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <div class="relative ml-4 flex items-center">
-          <div class="flex items-center space-x-4">
-         
-            <div class="cursor-pointer relative" id="profileDropdownButton">
-              <img src="{% static 'images/Ramim Ahmed.png' %}" alt="Profile" class="h-10 w-10 rounded-full bg-gray-300">
-              
-              <!-- Dropdown Menu -->
-              <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-64 rounded-md shadow-xl bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" style="top: 100%;">
-                <div class="p-4 flex flex-col items-center border-b border-gray-100">
-                  <div class="h-16 w-16 rounded-full bg-gray-300 mb-2 flex items-center justify-center">
-                    <img src="{% static 'images/user.png' %}" alt="Avatar Icon" class="h-12 w-12 rounded-full">
-                  </div>
-                  <h3 class="text-purple-800 font-bold text-lg">Ramim Ahmed</h3>
-                  <p class="text-gray-500 text-sm">Student ID: N/A</p>
-                  <button class="mt-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 py-2 text-sm font-medium">
-                    View Profile
-                  </button>
+            <div class="relative ml-4 flex items-center">
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- Profile Section -->
+                        <div class="relative">
+                            <button onclick="document.getElementById('profileMenu').classList.toggle('hidden')" class="flex items-center space-x-3 focus:outline-none">
+                                <img src="{% static 'images/Ramim Ahmed.png' %}" alt="Profile" class="h-10 w-10 rounded-full object-cover ring-2 ring-white/50"/>
+                                
+                            </button>
+
+                            <!-- Profile Dropdown Menu -->
+                            <div id="profileMenu" class="hidden absolute right-0 mt-2 w-72 rounded-xl shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transform transition-all duration-300">
+                                <div class="p-6 flex flex-col items-center border-b border-gray-100">
+                                    <div class="h-20 w-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 p-1">
+                                        <img src="{% static 'images/Ramim Ahmed.png' %}" alt="Profile" class="h-full w-full rounded-full object-cover ring-2 ring-white"/>
+                                    </div>
+                                    <h3 class="mt-4 text-gray-900 font-bold text-lg">RAMIM AHMED</h3>
+                                    <p class="text-gray-500 text-sm">Student ID: N/A</p>
+                                    <button class="mt-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full px-8 py-2 text-sm font-medium transition duration-150 transform hover:scale-105">
+                                        View Profile
+                                    </button>
+                                </div>
+
+                                <div class="py-1">
+                                    <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                        Leaderboard
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        My Quiz
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                        </svg>
+                                        Results
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                        Performance
+                                    </a>
+                                    <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        TO DO
+                                        <span class="ml-2 px-2 py-0.5 text-xs text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full">New</span>
+                                    </a>
+                                </div>
+
+                                <div class="border-t border-gray-100"></div>
+
+                                <div class="py-1">
+                                    <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition duration-150">
+                                        <svg class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Menu Button -->
+                        <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')" class="md:hidden rounded-md p-2 hover:bg-white/10 transition duration-150">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-white hover:bg-white/10 px-4 py-2 rounded-full text-sm font-medium transition duration-150 border border-white/20">Login</a>
+                        <a href="{% url 'register' %}" class="bg-white text-indigo-700 hover:bg-white/90 px-4 py-2 rounded-full text-sm font-medium transition duration-150">Register</a>
+                    {% endif %}
                 </div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    Leaderboard
-                  </a>
-                </div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <img class="h-5 w-5 mr-3 text-gray-500" src="{% static 'images/quiz.png' %}" alt="">
-                    My Quiz
-                  </a>
-                </div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <img class="h-5 w-5 mr-3 text-gray-500" src="{% static 'images/result.png' %}" alt="">
-                   Result
-                  </a>
-                </div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <img class="h-5 w-5 mr-3 text-gray-500" src="{% static 'images/performance.png' %}" alt="performance">
-                    Performance
-                  </a>
-                </div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <img class="h-5 w-5 mr-3 text-gray-500" src="{% static 'images/todo.png' %}" alt="todo">
-                    TO DO<span class="ml-1 text-xs text-white bg-blue-500 px-1 rounded">New</span>
-                  </a>
-                </div>
-                
-                <div class="border-t border-gray-100"></div>
-                
-                <div class="py-1">
-                  <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Logout
-                  </a>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobileMenu" class="hidden md:hidden flex flex-col items-center mx-auto justify-center space-y-4 py-4 bg-gradient-to-r from-indigo-800 via-purple-700 to-indigo-800 text-white shadow-lg rounded-lg">
+
+        {% if user.is_authenticated %}
+        <div class="flex flex-col items-center space-y-4">
+            <div class="h-20 w-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 p-1 flex items-center justify-center">
+                <img src="{% static 'images/user.png' %}" alt="Profile" class="h-full w-full rounded-full object-cover ring-2 ring-white"/>
+            </div>
+            <a href="#" class="block px-4 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 transition duration-150 text-center">My Quizzes</a>
+            <a href="#" class="block px-4 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 transition duration-150 text-center">Create Quiz</a>
+            <a href="#" class="block px-4 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 transition duration-150 text-center">Available Quizzes</a>
+            <a href="#" class="block px-4 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 transition duration-150 text-center">Leaderboard</a>
+            <a href="{% url 'logout' %}" class="block px-4 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 transition duration-150 text-center">Logout</a>
+        </div>
+        {% else %}
+        <div class="flex flex-col items-center space-y-4">
+            <a href="{% url 'login' %}" class="block px-4 py-2 rounded-md text-base font-medium text-white hover:bg-white/10 transition duration-150 text-center">Login</a>
+            <a href="{% url 'register' %}" class="block px-4 py-2 rounded-md text-base font-medium bg-white text-indigo-700 hover:bg-white/90 transition duration-150 text-center">Register</a>
+        </div>
+        {% endif %}
+
+    </div>
+</nav>
+
 <script src="{% static 'js/nav.js' %}"></script>
