@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Registration Successful{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-[80vh] px-4">
+    <div class="max-w-md w-full bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+        <!-- Success Card -->
+        <div class="p-8">
+            <!-- Success Icon with animation -->
+            <div class="flex justify-center mb-8">
+                <div class="bg-green-50 rounded-full p-5 shadow-sm border border-green-100 animate-pulse">
+                    <img src="{% static 'images/register_success.png' %}" alt="Success Icon" class="w-24 h-24">
+                </div>
+            </div>
+            
+            <!-- Success Message with improved typography -->
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-3">Registration Successful!</h1>
+            <p class="text-center text-gray-600 mb-8 text-lg">
+                Your account has been created successfully. You can now log in to access your account.
+            </p>
+            
+            {% comment %} <!-- Confirmation details with icons -->
+            <div class="bg-blue-50 rounded-lg p-4 mb-8 border-l-4 border-blue-500">
+                <p class="text-blue-800 font-medium">
+                    A confirmation email has been sent to your email address. Please check your inbox.
+                </p>
+            </div> {% endcomment %}
+            
+            <!-- Call to Action - Fixed button structure -->
+            <a href="{% url 'account:login' %}" class="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg text-center transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                Login
+            </a>
+            
+            <!-- Additional help link -->
+            <div class="text-center mt-6">
+                <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Need help? Contact support</a>
+            </div>
+        </div>
+        
+ 
+    </div>
+</div>
+{% endblock %}

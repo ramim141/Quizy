@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 def register(request):
     if request.method == 'POST':
         username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         password = request.POST.get('password')
         confirm_password = request.POST.get('confirm_password')
@@ -18,9 +20,10 @@ def register(request):
             elif User.objects.filter(email=email).exists():
                 messages.error(request, 'Email already exists')
             else:
-                User.objects.create_user(username=username, email=email, password=password)
+                User.objects.create_user(username=username, email=email, password=password, first_name=first_name, last_name=last_name)
                 messages.success(request, 'Registration successful. Please log in.')
-                return redirect('account:login')  # Redirect to the user_login view
+                # return redirect('account:login')  
+                return render(request, 'account/register_success.html')
         else:
             messages.error(request, 'Passwords do not match')
     return render(request, 'account/register.html')

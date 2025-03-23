@@ -26,7 +26,8 @@ urlpatterns = [
 
     # Include URLs from other apps
     # path('quiz/', include('quiz.urls')),
-    path('account/', include('account.urls')),
+    # path('account/', include('account.urls')),
+    path('account/', include(('account.urls', 'account'), namespace='account')),
 ]
 
 if settings.DEBUG:
