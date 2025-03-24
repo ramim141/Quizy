@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Registration - QuizMaster{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen items-center justify-center bg-gray-100 p-4">
+    <div class="w-full max-w-md rounded-lg border bg-white p-6 shadow-sm">
+        <div class="mb-6 text-center">
+            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+            </div>
+            <h2 class="mt-4 text-2xl font-bold">Student Registration</h2>
+            <p class="text-sm text-gray-600">Create an account to take quizzes</p>
+        </div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="space-y-2">
+                <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700">Username</label>
+                {{ form.username.errors }}
+                <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" value="{{ form.username.value|default:'' }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+            </div>
+            
+            <div class="space-y-2">
+                <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email</label>
+                {{ form.email.errors }}
+                <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" value="{{ form.email.value|default:'' }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+            </div>
+            
+            <div class="space-y-2">
+                <label for="{{ form.student_id.id_for_label }}" class="block text-sm font-medium text-gray-700">Student ID</label>
+                {{ form.student_id.errors }}
+                <input type="text" name="{{ form.student_id.name }}" id="{{ form.student_id.id_for_label }}" value="{{ form.student_id.value|default:'' }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+            </div>
+            
+            <div class="space-y-2">
+                <label for="{{ form.password1.id_for_label }}" class="block text-sm font-medium text-gray-700">Password</label>
+                {{ form.password1.errors }}
+                <input type="password" name="{{ form.password1.name }}" id="{{ form.password1.id_for_label }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                <p class="text-xs text-gray-500">
+                    Your password must contain at least 8 characters and can't be entirely numeric.
+                </p>
+            </div>
+            
+            <div class="space-y-2">
+                <label for="{{ form.password2.id_for_label }}" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                {{ form.password2.errors }}
+                <input type="password" name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+            </div>
+            
+            <button type="submit" class="w-full rounded-md bg-primary-600 px-4 py-2 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                Register
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center text-sm text-gray-600">
+            <span>Already have an account? </span>
+            <a href="{% url 'login' %}" class="font-medium text-primary-600 hover:underline">Sign in</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
