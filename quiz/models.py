@@ -14,7 +14,7 @@ class Quiz(models.Model):
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    tittle = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
     description = models.TextField()
     teacher = models.ForeignKey(
         Teacher, on_delete=models.CASCADE, related_name='quizzes')
@@ -38,10 +38,10 @@ class Quiz(models.Model):
         return reverse('quiz_detail', kwargs={'pk': self.pk})
 
     def get_questions(self):
-        return self.question_set.all()
+        return self.questions.all() 
 
     def get_question_count(self):
-        return self.question_set.count()
+        return self.questions.count() 
 
 
 class Question(models.Model):

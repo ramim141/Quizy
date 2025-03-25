@@ -1,0 +1,241 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Teacher Dashboard - QuizMaster{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col mx-auto px-4 sm:px-6 lg:px-20">
+    <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+        <div class="flex items-center gap-2 font-semibold">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <span>QuizMaster</span>
+        </div>
+        <nav class="ml-auto flex gap-2">
+            <a href="{% url 'teacher_dashboard' %}" class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">Dashboard</a>
+            <a href="#" class="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">Profile</a>
+            <a href="{% url 'account:logout' %}" class="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">Logout</a>
+        </nav>
+    </header>
+    
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+            <div class="rounded-lg border bg-white p-4 shadow-sm">
+                <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="text-sm font-medium text-gray-500">Total Quizzes</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold">{{ total_quizzes }}</div>
+                <p class="text-xs text-gray-500">+{{ active_quizzes.count }} active</p>
+            </div>
+            
+            <div class="rounded-lg border bg-white p-4 shadow-sm">
+                <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="text-sm font-medium text-gray-500">Active Students</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold">{{ total_students }}</div>
+                <p class="text-xs text-gray-500">Unique participants</p>
+            </div>
+            
+            <div class="rounded-lg border bg-white p-4 shadow-sm">
+                <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="text-sm font-medium text-gray-500">Average Score</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold">{{ avg_score }}%</div>
+                <p class="text-xs text-gray-500">Across all quizzes</p>
+            </div>
+            
+            <div class="rounded-lg border bg-white p-4 shadow-sm">
+                <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 class="text-sm font-medium text-gray-500">Upcoming Quizzes</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold">{{ active_quizzes.count }}</div>
+                <p class="text-xs text-gray-500">Active quizzes</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <a href="{% url 'quiz_create' %}" class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create Quiz
+            </a>
+        </div>
+        
+        <div class="rounded-lg border bg-white shadow-sm">
+            <div class="border-b">
+                <div class="flex flex-wrap -mb-px">
+                    <button class="tab-btn inline-block p-4 border-b-2 border-primary-500 text-primary-600 font-medium" data-target="active-tab">Active Quizzes</button>
+                    <button class="tab-btn inline-block p-4 border-b-2 border-transparent hover:border-gray-300" data-target="draft-tab">Drafts</button>
+                    <button class="tab-btn inline-block p-4 border-b-2 border-transparent hover:border-gray-300" data-target="completed-tab">Completed</button>
+                </div>
+            </div>
+            
+            <div id="active-tab" class="tab-content p-4">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {% for quiz in active_quizzes %}
+                    <div class="rounded-lg border bg-white shadow-sm">
+                        <div class="p-4 border-b">
+                            <h3 class="font-semibold">{{ quiz.title }}</h3>
+                            <p class="text-sm text-gray-500">{{ quiz.get_question_count }} questions • {{ quiz.time_limit }} minutes</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="text-sm">
+                                <div class="flex justify-between mb-2">
+                                    <span>Status:</span>
+                                    <span class="font-medium text-green-600">Active</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Participants:</span>
+                                    <span>{{ quiz.attempts.count }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Created:</span>
+                                    <span>{{ quiz.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between p-4 border-t">
+                            <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                View Details
+                            </a>
+                            <a href="{% url 'quiz_edit' pk=quiz.pk %}" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-3 py-8 text-center">
+                        <p class="text-gray-500">No active quizzes found. Create a new quiz to get started.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div id="draft-tab" class="tab-content p-4 hidden">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {% for quiz in draft_quizzes %}
+                    <div class="rounded-lg border bg-white shadow-sm">
+                        <div class="p-4 border-b">
+                            <h3 class="font-semibold">{{ quiz.title }}</h3>
+                            <p class="text-sm text-gray-500">{{ quiz.get_question_count }} questions • {{ quiz.time_limit }} minutes</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="text-sm">
+                                <div class="flex justify-between mb-2">
+                                    <span>Status:</span>
+                                    <span class="font-medium text-amber-600">Draft</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Created:</span>
+                                    <span>{{ quiz.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between p-4 border-t">
+                            <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                View Details
+                            </a>
+                            <a href="{% url 'quiz_edit' pk=quiz.pk %}" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-3 py-8 text-center">
+                        <p class="text-gray-500">No draft quizzes found.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div id="completed-tab" class="tab-content p-4 hidden">
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {% for quiz in completed_quizzes %}
+                    <div class="rounded-lg border bg-white shadow-sm">
+                        <div class="p-4 border-b">
+                            <h3 class="font-semibold">{{ quiz.title }}</h3>
+                            <p class="text-sm text-gray-500">{{ quiz.get_question_count }} questions • {{ quiz.time_limit }} minutes</p>
+                        </div>
+                        <div class="p-4">
+                            <div class="text-sm">
+                                <div class="flex justify-between mb-2">
+                                    <span>Status:</span>
+                                    <span class="font-medium text-blue-600">Completed</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Participants:</span>
+                                    <span>{{ quiz.attempts.count }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Completed:</span>
+                                    <span>{{ quiz.updated_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between p-4 border-t">
+                            <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                View Details
+                            </a>
+                            <a href="{% url 'quiz_edit' pk=quiz.pk %}" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-span-3 py-8 text-center">
+                        <p class="text-gray-500">No completed quizzes found.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => {
+                    t.classList.remove('border-primary-500', 'text-primary-600');
+                    t.classList.add('border-transparent');
+                });
+                
+                // Add active class to clicked tab
+                tab.classList.add('border-primary-500', 'text-primary-600');
+                tab.classList.remove('border-transparent');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show the selected tab content
+                const targetId = tab.getAttribute('data-target');
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

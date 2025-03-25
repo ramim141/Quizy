@@ -1,0 +1,463 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Quiz Details - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col mx-auto px-4 sm:px-6 lg:px-20">
+    <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+        <a href="{% url 'teacher_dashboard' %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="sr-only">Back</span>
+        </a>
+        <h1 class="text-lg font-semibold">Quiz Details</h1>
+    </header>
+    
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+                <h1 class="text-2xl font-bold">{{ quiz.title }}</h1>
+                <p class="text-gray-500">{{ quiz.description }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="{% url 'quiz_edit' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                </a>
+                <button id="share-btn" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    Share
+                </button>
+                <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export
+                </button>
+                <button class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                </button>
+            </div>
+        </div>
+        
+        <div id="share-options" class="hidden rounded-lg border bg-white shadow-sm">
+            <div class="p-6 border-b">
+                <h2 class="text-lg font-semibold">Share Quiz</h2>
+                <p class="text-sm text-gray-500">Share this quiz with your students</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="grid gap-2">
+                    <label for="quiz-link" class="block text-sm font-medium text-gray-700">Quiz Link</label>
+                    <div class="flex gap-2">
+                        <input id="quiz-link" value="https://quizmaster.app/access/?quiz_id={{ quiz.id }}" readonly class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                        <button onclick="copyToClipboard('quiz-link')" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span class="sr-only">Copy link</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid gap-2">
+                    <label for="quiz-id" class="block text-sm font-medium text-gray-700">Quiz ID for Students</label>
+                    <div class="flex gap-2">
+                        <input id="quiz-id" value="{{ quiz.id }}" readonly class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                        <button onclick="copyToClipboard('quiz-id')" class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span class="sr-only">Copy ID</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="require-login" class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500">
+                    <label for="require-login" class="text-sm font-medium text-gray-700">Require student login</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-lg border bg-white shadow-sm">
+                <div class="p-6 border-b">
+                    <h2 class="text-base font-semibold">Quiz Information</h2>
+                </div>
+                <div class="p-6">
+                    <dl class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <dt class="text-gray-500">Status</dt>
+                            <dd>
+                                <span class="inline-flex items-center rounded-full bg-{% if quiz.status == 'active' %}green{% elif quiz.status == 'draft' %}amber{% else %}blue{% endif %}-100 px-2.5 py-0.5 text-xs font-medium text-{% if quiz.status == 'active' %}green{% elif quiz.status == 'draft' %}amber{% else %}blue{% endif %}-800">
+                                    {{ quiz.get_status_display }}
+                                </span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Created</dt>
+                            <dd>{{ quiz.created_at|date:"M d, Y" }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Questions</dt>
+                            <dd>{{ quiz.get_question_count }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Time Limit</dt>
+                            <dd>{{ quiz.time_limit }} minutes</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Passing Score</dt>
+                            <dd>{{ quiz.passing_score }}%</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Attempts Allowed</dt>
+                            <dd>{{ quiz.max_attempts }}</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="p-6 border-t">
+                    <a href="#" class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Preview Quiz
+                    </a>
+                </div>
+            </div>
+            
+            <div class="rounded-lg border bg-white shadow-sm">
+                <div class="p-6 border-b">
+                    <h2 class="text-base font-semibold">Participation</h2>
+                </div>
+                <div class="p-6 flex flex-col items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span class="text-2xl font-bold">{{ total_attempts }}</span>
+                    </div>
+                    <p class="text-center text-sm text-gray-500">Students have taken this quiz</p>
+                    
+                    {% if total_attempts > 0 %}
+                    <div class="mt-4 w-full">
+                        <div class="mb-1 flex justify-between text-xs">
+                            <span>Completion Rate</span>
+                            <span>100%</span>
+                        </div>
+                        <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                            <div class="h-full bg-primary-600 transition-all" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-6 border-t">
+                    <a href="#" class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        View Participants
+                    </a>
+                </div>
+            </div>
+            
+            <div class="rounded-lg border bg-white shadow-sm">
+                <div class="p-6 border-b">
+                    <h2 class="text-base font-semibold">Performance</h2>
+                </div>
+                <div class="p-6">
+                    <dl class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <dt class="text-gray-500">Average Score</dt>
+                            <dd class="text-2xl font-bold">{{ avg_score|floatformat:0 }}%</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Pass Rate</dt>
+                            <dd class="text-2xl font-bold">{{ pass_rate|floatformat:0 }}%</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="p-6 border-t">
+                    <a href="#" class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        View Detailed Analytics
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="rounded-lg border bg-white shadow-sm">
+            <div class="border-b">
+                <div class="flex flex-wrap -mb-px">
+                    <button class="tab-btn inline-block p-4 border-b-2 border-primary-500 text-primary-600 font-medium" data-target="questions-tab">Questions</button>
+                    <button class="tab-btn inline-block p-4 border-b-2 border-transparent hover:border-gray-300" data-target="results-tab">Results</button>
+                    <button class="tab-btn inline-block p-4 border-b-2 border-transparent hover:border-gray-300" data-target="analytics-tab">Analytics</button>
+                </div>
+            </div>
+            
+            <div id="questions-tab" class="tab-content p-6 space-y-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Quiz Questions</h3>
+                    <a href="{% url 'add_question' quiz_id=quiz.id %}" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Question
+                    </a>
+                </div>
+                
+                {% for question in quiz.get_questions %}
+                <div class="rounded-lg border bg-white shadow-sm">
+                    <div class="p-4 border-b">
+                        <div class="flex items-start justify-between">
+                            <h4 class="text-base font-semibold">Question {{ forloop.counter }}</h4>
+                            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                                {{ question.get_question_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <p>{{ question.text }}</p>
+                        
+                        {% if question.question_type == 'multiple-choice' %}
+                        <ul class="mt-2 space-y-1">
+                            {% for answer in question.get_answers %}
+                            <li class="flex items-center gap-2 rounded px-2 py-1 text-sm {% if answer.is_correct %}bg-green-50 text-green-700{% endif %}">
+                                {% if answer.is_correct %}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {% endif %}
+                                {{ answer.text }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% elif question.question_type == 'true-false' %}
+                        <div class="mt-2 text-sm">
+                            <span class="font-medium">Correct Answer: </span>
+                            <span class="text-green-600">
+                                {% for answer in question.get_answers %}
+                                    {% if answer.is_correct %}{{ answer.text }}{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% elif question.question_type == 'short-answer' %}
+                        <div class="mt-2 text-sm">
+                            <span class="font-medium">Correct Answer: </span>
+                            <span class="text-green-600">
+                                {% for answer in question.get_answers %}
+                                    {% if answer.is_correct %}{{ answer.text }}{% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-end gap-2 p-4 border-t">
+                        <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-gray-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="py-8 text-center">
+                    <p class="text-gray-500">No questions added yet. Click "Add Question" to get started.</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div id="results-tab" class="tab-content p-6 hidden">
+                <div class="rounded-lg border bg-white shadow-sm">
+                    <div class="p-6 border-b">
+                        <h3 class="text-base font-semibold">Recent Results</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="rounded-md border">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b bg-gray-50 font-medium">
+                                        <th class="py-2 pl-4 pr-2 text-left">Student</th>
+                                        <th class="px-2 py-2 text-left">Score</th>
+                                        <th class="px-2 py-2 text-left">Time Taken</th>
+                                        <th class="px-2 py-2 text-left">Completed</th>
+                                        <th class="px-2 py-2 text-left">Status</th>
+                                        <th class="px-2 py-2 text-right"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for attempt in recent_results %}
+                                    <tr class="border-b">
+                                        <td class="py-2 pl-4 pr-2">{{ attempt.student.user.username }}</td>
+                                        <td class="px-2 py-2">{{ attempt.score|floatformat:0 }}%</td>
+                                        <td class="px-2 py-2">{{ attempt.get_time_taken }}</td>
+                                        <td class="px-2 py-2">{{ attempt.end_time|date:"M d, Y" }}</td>
+                                        <td class="px-2 py-2">
+                                            <span class="inline-flex items-center rounded-full bg-{% if attempt.is_passed %}green{% else %}red{% endif %}-100 px-2.5 py-0.5 text-xs font-medium text-{% if attempt.is_passed %}green{% else %}red{% endif %}-800">
+                                                {% if attempt.is_passed %}Passed{% else %}Failed{% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="px-2 py-2 text-right">
+                                            <a href="{% url 'quiz_results' attempt_id=attempt.id %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                                                View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="py-4 text-center text-gray-500">No results available yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="p-6 border-t">
+                        <button class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            View All Results
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="analytics-tab" class="tab-content p-6 hidden">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-lg border bg-white shadow-sm">
+                        <div class="p-6 border-b">
+                            <h3 class="text-base font-semibold">Score Distribution</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="h-[200px] flex items-end justify-around">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 bg-primary-600 rounded-t" style="height: 20px"></div>
+                                    <span class="mt-2 text-xs">0-20%</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 bg-primary-600 rounded-t" style="height: 40px"></div>
+                                    <span class="mt-2 text-xs">21-40%</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 bg-primary-600 rounded-t" style="height: 60px"></div>
+                                    <span class="mt-2 text-xs">41-60%</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 bg-primary-600 rounded-t" style="height: 120px"></div>
+                                    <span class="mt-2 text-xs">61-80%</span>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-12 bg-primary-600 rounded-t" style="height: 160px"></div>
+                                    <span class="mt-2 text-xs">81-100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="rounded-lg border bg-white shadow-sm">
+                        <div class="p-6 border-b">
+                            <h3 class="text-base font-semibold">Question Difficulty</h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                {% for stat in question_stats %}
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span>Question {{ forloop.counter }}</span>
+                                        <span>{{ stat.correct_percentage|floatformat:0 }}% correct</span>
+                                    </div>
+                                    <div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                                        <div class="h-full bg-primary-600 transition-all" style="width: {{ stat.correct_percentage }}%"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 rounded-lg border bg-white shadow-sm">
+                    <div class="p-6 border-b">
+                        <h3 class="text-base font-semibold">Time Analysis</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="h-[200px] flex items-end justify-around">
+                            {% for stat in question_stats %}
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 bg-primary-600 rounded-t" style="height: {{ stat.avg_time }}px"></div>
+                                <span class="mt-2 text-xs">Q{{ forloop.counter }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const shareBtn = document.getElementById('share-btn');
+        const shareOptions = document.getElementById('share-options');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => {
+                    t.classList.remove('border-primary-500', 'text-primary-600');
+                    t.classList.add('border-transparent');
+                });
+                
+                // Add active class to clicked tab
+                tab.classList.add('border-primary-500', 'text-primary-600');
+                tab.classList.remove('border-transparent');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show the selected tab content
+                const targetId = tab.getAttribute('data-target');
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+        
+        // Share button toggle
+        shareBtn.addEventListener('click', () => {
+            shareOptions.classList.toggle('hidden');
+        });
+        
+        // Copy to clipboard function
+        window.copyToClipboard = function(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand('copy');
+            
+            // Show a temporary "Copied!" message
+            const originalText = element.nextElementSibling.innerHTML;
+            element.nextElementSibling.innerHTML = '<span class="text-green-600">Copied!</span>';
+            setTimeout(() => {
+                element.nextElementSibling.innerHTML = originalText;
+            }, 2000);
+        };
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

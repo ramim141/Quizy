@@ -1,0 +1,172 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Add Question - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col mx-auto px-4 sm:px-6 lg:px-20">
+    <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+        <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span class="sr-only">Back</span>
+        </a>
+        <h1 class="text-lg font-semibold">Add Question to {{ quiz.title }}</h1>
+    </header>
+    
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <form method="post" enctype="multipart/form-data" class="grid gap-6">
+            {% csrf_token %}
+            
+            <div class="rounded-lg border bg-white shadow-sm">
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold">Question Details</h2>
+                </div>
+                <div class="p-6 grid gap-6">
+                    <div class="grid gap-3">
+                        <label for="{{ form.text.id_for_label }}" class="block text-sm font-medium text-gray-700">Question Text</label>
+                        {{ form.text.errors }}
+                        <textarea name="{{ form.text.name }}" id="{{ form.text.id_for_label }}" rows="3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" placeholder="Enter your question" required>{{ form.text.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="grid gap-3">
+                        <label for="{{ form.question_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Question Type</label>
+                        {{ form.question_type.errors }}
+                        <select name="{{ form.question_type.name }}" id="{{ form.question_type.id_for_label }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" required>
+                            {% for value, text in form.question_type.field.choices %}
+                            <option value="{{ value }}" {% if form.question_type.value == value %}selected{% endif %}>{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="grid gap-3">
+                        <label for="{{ form.points.id_for_label }}" class="block text-sm font-medium text-gray-700">Points</label>
+                        {{ form.points.errors }}
+                        <input type="number" name="{{ form.points.name }}" id="{{ form.points.id_for_label }}" value="{{ form.points.value|default:'1' }}" min="1" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                    </div>
+                    
+                    <div class="grid gap-3">
+                        <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700">Image (Optional)</label>
+                        {{ form.image.errors }}
+                        <input type="file" name="{{ form.image.name }}" id="{{ form.image.id_for_label }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                    </div>
+                    
+                    <div class="grid gap-3">
+                        <label for="{{ form.explanation.id_for_label }}" class="block text-sm font-medium text-gray-700">Explanation (Optional)</label>
+                        {{ form.explanation.errors }}
+                        <textarea name="{{ form.explanation.name }}" id="{{ form.explanation.id_for_label }}" rows="2" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" placeholder="Provide an explanation for the correct answer">{{ form.explanation.value|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="multiple-choice-answers" class="rounded-lg border bg-white shadow-sm">
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold">Answer Options</h2>
+                    <p class="text-sm text-gray-500">Add answer options and mark the correct one</p>
+                </div>
+                <div class="p-6 grid gap-4">
+                    <div class="answer-option">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="correct_answer" value="0" id="correct_0" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500" checked>
+                            <input type="text" name="answer_text_0" placeholder="Option 1" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" required>
+                        </div>
+                    </div>
+                    <div class="answer-option">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="correct_answer" value="1" id="correct_1" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <input type="text" name="answer_text_1" placeholder="Option 2" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" required>
+                        </div>
+                    </div>
+                    <div class="answer-option">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="correct_answer" value="2" id="correct_2" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <input type="text" name="answer_text_2" placeholder="Option 3" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                        </div>
+                    </div>
+                    <div class="answer-option">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="correct_answer" value="3" id="correct_3" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <input type="text" name="answer_text_3" placeholder="Option 4" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="true-false-answers" class="rounded-lg border bg-white shadow-sm hidden">
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold">Correct Answer</h2>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="tf_correct_answer" value="true" id="tf_true" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500" checked>
+                            <label for="tf_true" class="text-sm font-medium text-gray-700">True</label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="radio" name="tf_correct_answer" value="false" id="tf_false" class="h-4 w-4 rounded-full border-gray-300 text-primary-600 focus:ring-primary-500">
+                            <label for="tf_false" class="text-sm font-medium text-gray-700">False</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="short-answer" class="rounded-lg border bg-white shadow-sm hidden">
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold">Correct Answer</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid gap-3">
+                        <label for="correct_answer" class="block text-sm font-medium text-gray-700">Enter the correct answer</label>
+                        <input type="text" name="correct_answer" id="correct_answer" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" placeholder="Enter the correct answer">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                    Add Question
+                </button>
+            </div>
+        </form>
+    </main>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const questionTypeSelect = document.getElementById('{{ form.question_type.id_for_label }}');
+        const multipleChoiceAnswers = document.getElementById('multiple-choice-answers');
+        const trueFalseAnswers = document.getElementById('true-false-answers');
+        const shortAnswer = document.getElementById('short-answer');
+        
+        function updateAnswerSection() {
+            const questionType = questionTypeSelect.value;
+            
+            // Hide all answer sections
+            multipleChoiceAnswers.classList.add('hidden');
+            trueFalseAnswers.classList.add('hidden');
+            shortAnswer.classList.add('hidden');
+            
+            // Show the appropriate section based on question type
+            if (questionType === 'multiple-choice') {
+                multipleChoiceAnswers.classList.remove('hidden');
+            } else if (questionType === 'true-false') {
+                trueFalseAnswers.classList.remove('hidden');
+            } else if (questionType === 'short-answer') {
+                shortAnswer.classList.remove('hidden');
+            }
+        }
+        
+        // Initial setup
+        updateAnswerSection();
+        
+        // Update when question type changes
+        questionTypeSelect.addEventListener('change', updateAnswerSection);
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

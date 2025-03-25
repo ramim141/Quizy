@@ -1,8 +1,6 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.db import transaction
 from django.forms import inlineformset_factory
-from .models import User, Teacher, Student, Quiz, Question, Answer
+from quiz.models import Quiz, Question, Answer
 
 
 class QuizForm(forms.ModelForm):
