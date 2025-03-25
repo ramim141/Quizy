@@ -50,3 +50,12 @@ TrueFalseAnswerFormSet = inlineformset_factory(
 
 class ShortAnswerForm(forms.Form):
     correct_answer = forms.CharField(max_length=255)
+    
+    
+    
+class ShortAnswerForm(forms.Form):
+    correct_answer = forms.CharField(max_length=255)
+
+class QuizAccessForm(forms.Form):
+    quiz_id = forms.UUIDField(label="Quiz ID")
+    student_id = forms.CharField(max_length=20, label="Student ID")

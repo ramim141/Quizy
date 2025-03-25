@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block title %}Taking Quiz - {{ quiz.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .question-container {
+        display: none;
+    }
+    .question-container.active {
+        display: block;
+    }
+    .option-label {
+        display: block;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .option-label:hover {
+        background-color: #f3f4f6;
+    }
+    .option-input:checked + .option-label {
+        background-color: #f0f9ff;
+        border-color: #0ea5e9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col">
+    <header class="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+        <h1 class="text-lg font-semibold">{{ quiz.title }}</h1>
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="timer" class="font-mono" data-time-limit="{{ time_limit_seconds }}">{{ quiz.time_limit }}:00</span>
+        </div>
+    </header>
+    
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        {% if prevent_tab_switch %}
+        <div id="tab-warning" class="hidden rounded-md bg-red-50 p-4 mb-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Warning!</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>You switched tabs or minimized the window. This is not allowed during the quiz. Further violations may result in automatic submission.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-500">
+                Question <span id="current-question">1</span> of {{ questions|length }}
+            </div>
+            <div class="text-sm font-medium"><span id="progress-percentage">0</span>% Complete</div>
+        </div>
+        
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div id="progress-bar" class="h-full bg-primary-600 transition-all" style="width: 0%"></div>
+        </div>
+        
+        <form id="quiz-form" method="post" action="{% url 'take_quiz' attempt_id=attempt.id %}">
+            {% csrf_token %}
+            
+            {% for question in questions %}
+            <div id="question-{{ forloop.counter }}" class="question-container {% if forloop.first %}active{% endif %} rounded-lg border bg-white shadow-sm">
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+                    
+                    {% if question.image %}
+                    <div class="mt-4 mb-6">
+                        <img src="{{ question.image.url }}" alt="Question image" class="max-h-64 rounded-md object-contain">
+                    </div>
+                    {% endif %}
+                    
+                    <input type="hidden" name="time_spent_{{ question.id }}" id="time_spent_{{ question.id }}" value="0">
+                    
+                    {% if question.question_type == 'multiple-choice' %}
+                    <div class="mt-4">
+                        {% for answer in question.get_answers %}
+                        <div class="relative">
+                            <input type="radio" name="question_{{ question.id }}" id="answer_{{ answer.id }}" value="{{ answer.id }}" class="option-input sr-only">
+                            <label for="answer_{{ answer.id }}" class="option-label">
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif question.question_type == 'true-false' %}
+                    <div class="mt-4">
+                        {% for answer in question.get_answers %}
+                        <div class="relative">
+                            <input type="radio" name="question_{{ question.id }}" id="answer_{{ answer.id }}" value="{{ answer.id }}" class="option-input sr-only">
+                            <label for="answer_{{ answer.id }}" class="option-label">
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif question.question_type == 'short-answer' %}
+                    <div class="mt-4">
+                        <label for="question_{{ question.id }}" class="block text-sm font-medium text-gray-700 mb-2">Your Answer</label>
+                        <input type="text" name="question_{{ question.id }}" id="question_{{ question.id }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" placeholder="Type your answer here">
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="flex justify-between p-4 border-t">
+                    <button type="button" class="prev-btn inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" {% if forloop.first %}disabled{% endif %}>
+                        Previous
+                    </button>
+                    
+                    {% if forloop.last %}
+                    <button type="submit" id="submit-btn" class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                        Submit Quiz
+                    </button>
+                    {% else %}
+                    <button type="button" class="next-btn inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                        Next
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </form>
+    </main>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const questions = document.querySelectorAll('.question-container');
+        const prevBtns = document.querySelectorAll('.prev-btn');
+        const nextBtns = document.querySelectorAll('.next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const currentQuestionEl = document.getElementById('current-question');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const timerEl = document.getElementById('timer');
+        const timeLimit = parseInt(timerEl.getAttribute('data-time-limit'));
+        const tabWarning = document.getElementById('tab-warning');
+        
+        let currentQuestion = 1;
+        let timeSpent = {};
+        let startTime = Date.now();
+        let questionStartTime = Date.now();
+        let timeRemaining = timeLimit;
+        
+        // Initialize time spent for each question
+        {% for question in questions %}
+        timeSpent[{{ question.id }}] = 0;
+        {% endfor %}
+        
+        // Update progress
+        function updateProgress() {
+            const progress = (currentQuestion / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressPercentage.textContent = Math.round(progress);
+            currentQuestionEl.textContent = currentQuestion;
+        }
+        
+        // Navigation between questions
+        function showQuestion(index) {
+            questions.forEach((q, i) => {
+                if (i + 1 === index) {
+                    q.classList.add('active');
+                } else {
+                    q.classList.remove('active');
+                }
+            });
+            
+            // Update time spent on previous question
+            if (currentQuestion !== index) {
+                const now = Date.now();
+                const questionId = questions[currentQuestion - 1].id.split('-')[1];
+                const questionIdFull = document.querySelector(`#question-${questionId}`).querySelector('input[type="hidden"]').name.split('_')[2];
+                timeSpent[questionIdFull] += Math.floor((now - questionStartTime) / 1000);
+                document.getElementById(`time_spent_${questionIdFull}`).value = timeSpent[questionIdFull];
+                
+                // Reset timer for new question
+                questionStartTime = now;
+                currentQuestion = index;
+                updateProgress();
+            }
+        }
+        
+        // Event listeners for navigation
+        prevBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentQuestion > 1) {
+                    showQuestion(currentQuestion - 1);
+                }
+            });
+        });
+        
+        nextBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (currentQuestion < questions.length) {
+                    showQuestion(currentQuestion + 1);
+                }
+            });
+        });
+        
+        // Timer functionality
+        function updateTimer() {
+            timeRemaining--;
+            
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('quiz-form').submit();
+                return;
+            }
+            
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Warning when time is running out
+            if (timeRemaining <= 60) {
+                timerEl.classList.add('text-red-500', 'animate-pulse');
+            }
+        }
+        
+        const timerInterval = setInterval(updateTimer, 1000);
+        
+        // Tab visibility detection
+        {% if prevent_tab_switch %}
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                tabWarning.classList.remove('hidden');
+            }
+        });
+        {% endif %}
+        
+        // Form submission
+        document.getElementById('quiz-form').addEventListener('submit', function(e) {
+            // Update time spent on current question
+            const now = Date.now();
+            const questionId = questions[currentQuestion - 1].id.split('-')[1];
+            const questionIdFull = document.querySelector(`#question-${questionId}`).querySelector('input[type="hidden"]').name.split('_')[2];
+            timeSpent[questionIdFull] += Math.floor((now - questionStartTime) / 1000);
+            document.getElementById(`time_spent_${questionIdFull}`).value = timeSpent[questionIdFull];
+            
+            // Continue with form submission
+            return true;
+        });
+        
+        // Initialize
+        updateProgress();
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

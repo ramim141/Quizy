@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz Results - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col">
+    <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+        <a href="{% url 'student_dashboard' %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="sr-only">Home</span>
+        </a>
+        <h1 class="text-lg font-semibold">Quiz Results</h1>
+    </header>
+    
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div class="mx-auto max-w-4xl rounded-lg border bg-white shadow-sm">
+            <div class="p-6 text-center border-b">
+                <h2 class="text-2xl font-bold">{{ quiz.title }}</h2>
+                <p class="text-sm text-gray-500">Completed on {{ attempt.end_time|date:"F j, Y" }}</p>
+            </div>
+            
+            <div class="p-6 grid gap-6">
+                <div class="flex flex-col items-center justify-center gap-4 rounded-lg bg-gray-50 p-6 text-center">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-3xl font-bold">{{ attempt.score|floatformat:0 }}%</h2>
+                        {% if passed %}
+                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Passed</span>
+                        {% else %}
+                        <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Failed</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="w-full max-w-md h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary-600 transition-all" style="width: {{ attempt.score }}%"></div>
+                    </div>
+                    
+                    <p class="text-sm text-gray-500">
+                        You answered {{ responses|dictsortbykey:"is_correct"|dictsort:"is_correct"|last|length }} out of {{ responses|length }} questions correctly
+                    </p>
+                    
+                    {% if passed %}
+                    <div class="mt-2 flex items-center gap-2 text-primary-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                        <span class="font-medium">Congratulations on passing the quiz!</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="rounded-lg border">
+                    <div class="border-b">
+                        <div class="flex flex-wrap -mb-px">
+                            <button class="tab-btn inline-block p-4 border-b-2 border-primary-500 text-primary-600 font-medium" data-target="summary-tab">Summary</button>
+                            <button class="tab-btn inline-block p-4 border-b-2 border-transparent hover:border-gray-300" data-target="questions-tab">Questions</button>
+                        </div>
+                    </div>
+                    
+                    <div id="summary-tab" class="tab-content p-6 space-y-6">
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div class="rounded-lg border bg-white shadow-sm">
+                                <div class="p-4 border-b">
+                                    <h3 class="text-base font-semibold">Performance Breakdown</h3>
+                                </div>
+                                <div class="p-4">
+                                    <div class="h-[200px] flex items-end justify-around">
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-16 bg-primary-600 rounded-t" style="height: {{ attempt.score }}px"></div>
+                                            <span class="mt-2 text-sm">Your Score</span>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-16 bg-gray-400 rounded-t" style="height: {{ class_avg }}px"></div>
+                                            <span class="mt-2 text-sm">Class Average</span>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="w-16 bg-green-500 rounded-t" style="height: {{ quiz.passing_score }}px"></div>
+                                            <span class="mt-2 text-sm">Passing Score</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="rounded-lg border bg-white shadow-sm">
+                                <div class="p-4 border-b">
+                                    <h3 class="text-base font-semibold">Quiz Statistics</h3>
+                                </div>
+                                <div class="p-4">
+                                    <dl class="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <dt class="text-gray-500">Time Taken</dt>
+                                            <dd class="font-medium">{{ attempt.get_time_taken }}</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="text-gray-500">Average Time per Question</dt>
+                                            <dd class="font-medium">{{ responses.0.time_spent|floatformat:0 }} seconds</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="text-gray-500">Your Percentile</dt>
+                                            <dd class="font-medium">{{ percentile|floatformat:0 }}%</dd>
+                                        </div>
+                                        <div>
+                                            <dt class="text-gray-500">Class Average</dt>
+                                            <dd class="font-medium">{{ class_avg|floatformat:0 }}%</dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="rounded-lg border bg-white shadow-sm">
+                            <div class="p-4 border-b">
+                                <h3 class="text-base font-semibold">Strengths & Areas for Improvement</h3>
+                            </div>
+                            <div class="p-4">
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div>
+                                        <h4 class="mb-2 font-medium text-primary-600">Strengths</h4>
+                                        <ul class="grid gap-2">
+                                            {% for strength in strengths %}
+                                            <li class="flex items-start gap-2 text-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>{{ strength }}</span>
+                                            </li>
+                                            {% empty %}
+                                            <li class="text-sm text-gray-500">No specific strengths identified.</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 class="mb-2 font-medium text-red-600">Areas for Improvement</h4>
+                                        <ul class="grid gap-2">
+                                            {% for improvement in improvements %}
+                                            <li class="flex items-start gap-2 text-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>{{ improvement }}</span>
+                                            </li>
+                                            {% empty %}
+                                            <li class="text-sm text-gray-500">No specific areas for improvement identified.</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="questions-tab" class="tab-content p-6 space-y-4 hidden">
+                        {% for response in responses %}
+                        <div class="rounded-lg border bg-white shadow-sm">
+                            <div class="p-4 border-b">
+                                <div class="flex items-start justify-between">
+                                    <h3 class="text-base font-semibold">Question {{ forloop.counter }}</h3>
+                                    {% if response.is_correct %}
+                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Correct</span>
+                                    {% else %}
+                                    <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Incorrect</span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-sm text-gray-700">{{ response.question.text }}</p>
+                            </div>
+                            <div class="p-4">
+                                <div class="grid gap-2">
+                                    <div class="text-sm">
+                                        <span class="font-medium">Your Answer: </span>
+                                        <span class="{% if response.is_correct %}text-green-600{% else %}text-red-600{% endif %}">
+                                            {% if response.answer %}
+                                                {{ response.answer.text }}
+                                            {% else %}
+                                                {{ response.text_response }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if not response.is_correct %}
+                                    <div class="text-sm">
+                                        <span class="font-medium">Correct Answer: </span>
+                                        <span class="text-green-600">
+                                            {% if response.question.question_type == 'multiple-choice' or response.question.question_type == 'true-false' %}
+                                                {{ response.question.answers.filter.is_correct.first.text }}
+                                            {% else %}
+                                                {{ response.question.answers.filter.is_correct.first.text }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    {% if response.question.explanation %}
+                                    <div class="mt-2 rounded-md bg-gray-50 p-3 text-sm">
+                                        <span class="font-medium">Explanation: </span>
+                                        {{ response.question.explanation }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap justify-between gap-2 p-6 border-t">
+                <div class="flex flex-wrap gap-2">
+                    <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Results
+                    </button>
+                    <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Share Results
+                    </button>
+                </div>
+                <a href="{% url 'student_dashboard' %}" class="inline-flex items-center rounded-md bg-primary-600 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                    Continue Learning
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                tabs.forEach(t => {
+                    t.classList.remove('border-primary-500', 'text-primary-600');
+                    t.classList.add('border-transparent');
+                });
+                
+                // Add active class to clicked tab
+                tab.classList.add('border-primary-500', 'text-primary-600');
+                tab.classList.remove('border-transparent');
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show the selected tab content
+                const targetId = tab.getAttribute('data-target');
+                document.getElementById(targetId).classList.remove('hidden');
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}
+

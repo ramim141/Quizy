@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.contrib.auth.models import User
-from .forms import (
-    TeacherSignUpForm, StudentSignUpForm, LoginForm,
-)
 import json
+from account.forms import StudentSignUpForm, TeacherSignUpForm, LoginForm
+
+
 # register
 
 # def register(request):
@@ -82,7 +81,7 @@ def teacher_signup(request):
           user = form.save()
           login(request, user)
           messages.success(request, 'Account created successfully! Welcome to QuizMaster.')
-          return redirect('home') # teacher dashboard
+          return redirect('teacher_dashboard') # teacher dashboard
   else:
       form = TeacherSignUpForm()
   
@@ -95,7 +94,7 @@ def student_signup(request):
           user = form.save()
           login(request, user)
           messages.success(request, 'Account created successfully! Welcome to QuizMaster.')
-          return redirect('home')
+          return redirect('student_dashboard')
   else:
       form = StudentSignUpForm()
   
@@ -113,9 +112,9 @@ def login_view(request):
           if user is not None:
               login(request, user)
               if user.is_teacher:
-                  return redirect('home')
+                  return redirect('teacher_dashboard')
               else:
-                  return redirect('home')
+                  return redirect('student_dashboard')
           else:
               messages.error(request, 'Invalid username or password')
   else:
@@ -142,3 +141,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('account:login')
+
+
+

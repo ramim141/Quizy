@@ -8,11 +8,11 @@ from .models import Teacher, Student, Quiz, QuizAttempt, QuestionResponse, Answe
 from .forms import (
      
     QuizForm, QuestionForm, MultipleChoiceAnswerFormSet,
-    TrueFalseAnswerFormSet, ShortAnswerForm
+    TrueFalseAnswerFormSet, ShortAnswerForm, QuizAccessForm
 )
 import json
-
-
+from django.contrib import messages
+from django.utils import timezone
 # Teacher Views
 @login_required
 def teacher_dashboard(request):
@@ -171,3 +171,250 @@ def add_question(request, quiz_id):
         'form': form,
         'quiz': quiz
     })
+    
+    
+
+
+
+
+
+# Student Views
+@login_required
+def student_dashboard(request):
+    if not request.user.is_student:
+        return redirect('login')
+    
+    student = Student.objects.get(user=request.user)
+    attempts = QuizAttempt.objects.filter(student=student)
+    
+    completed_attempts = attempts.filter(completed=True)
+    ongoing_attempts = attempts.filter(completed=False)
+    
+    context = {
+        'student': student,
+        'completed_attempts': completed_attempts,
+        'ongoing_attempts': ongoing_attempts
+    }
+    
+    return render(request, 'quiz/student/dashboard.html', context)
+
+
+
+
+@login_required
+def take_quiz(request, attempt_id):
+    attempt = get_object_or_404(QuizAttempt, pk=attempt_id)
+    
+    # Check if the student is authorized to take this quiz
+    if request.user.is_student and attempt.student.user != request.user:
+        messages.error(request, 'You are not authorized to take this quiz')
+        return redirect('student_dashboard')
+    
+    # Check if the quiz is already completed
+    if attempt.completed:
+        return redirect('quiz_results', attempt_id=attempt.id)
+    
+    quiz = attempt.quiz
+    questions = list(quiz.get_questions())
+    
+    if quiz.shuffle_questions:
+        import random
+        random.shuffle(questions)
+    
+    # Handle form submission
+    if request.method == 'POST':
+        # Process all question responses
+        for question in questions:
+            if question.question_type == 'multiple-choice' or question.question_type == 'true-false':
+                answer_id = request.POST.get(f'question_{question.id}')
+                if answer_id:
+                    answer = Answer.objects.get(id=answer_id)
+                    is_correct = answer.is_correct
+                    
+                    QuestionResponse.objects.create(
+                        attempt=attempt,
+                        question=question,
+                        answer=answer,
+                        is_correct=is_correct,
+                        time_spent=int(request.POST.get(f'time_spent_{question.id}', 0))
+                    )
+            elif question.question_type == 'short-answer':
+                text_response = request.POST.get(f'question_{question.id}')
+                correct_answer = question.answers.filter(is_correct=True).first()
+                
+                # Simple exact match for short answer
+                is_correct = False
+                if correct_answer and text_response:
+                    is_correct = text_response.lower().strip() == correct_answer.text.lower().strip()
+                
+                QuestionResponse.objects.create(
+                    attempt=attempt,
+                    question=question,
+                    text_response=text_response,
+                    is_correct=is_correct,
+                    time_spent=int(request.POST.get(f'time_spent_{question.id}', 0))
+                )
+        
+        # Mark the attempt as completed
+        attempt.end_time = timezone.now()
+        attempt.completed = True
+        attempt.score = attempt.calculate_score()
+        attempt.save()
+        
+        return redirect('quiz_results', attempt_id=attempt.id)
+    
+    context = {
+        'attempt': attempt,
+        'quiz': quiz,
+        'questions': questions,
+        'time_limit_seconds': quiz.time_limit * 60,
+        'prevent_tab_switch': quiz.prevent_tab_switch
+    }
+    
+    return render(request, 'quiz/student/take_quiz.html', context)
+
+
+
+@login_required
+def quiz_results(request, attempt_id):
+    attempt = get_object_or_404(QuizAttempt, pk=attempt_id, completed=True)
+    
+    # Check if the user is authorized to view these results
+    if request.user.is_student and attempt.student.user != request.user:
+        messages.error(request, 'You are not authorized to view these results')
+        return redirect('student_dashboard')
+    
+    if request.user.is_teacher and attempt.quiz.teacher.user != request.user:
+        messages.error(request, 'You are not authorized to view these results')
+        return redirect('teacher_dashboard')
+    
+    quiz = attempt.quiz
+    responses = attempt.responses.all()
+    
+    # Calculate strengths and areas for improvement
+    strengths = []
+    improvements = []
+    
+    # Group questions by type and check performance
+    question_types = {}
+    for response in responses:
+        q_type = response.question.question_type
+        if q_type not in question_types:
+            question_types[q_type] = {'correct': 0, 'total': 0}
+        
+        question_types[q_type]['total'] += 1
+        if response.is_correct:
+            question_types[q_type]['correct'] += 1
+    
+    # Determine strengths and weaknesses based on performance
+    for q_type, stats in question_types.items():
+        percentage = (stats['correct'] / stats['total']) * 100
+        if percentage >= 80:
+            if q_type == 'multiple-choice':
+                strengths.append('Strong understanding of multiple choice questions')
+            elif q_type == 'true-false':
+                strengths.append('Excellent grasp of true/false concepts')
+            elif q_type == 'short-answer':
+                strengths.append('Good ability to provide short answers')
+        elif percentage <= 50:
+            if q_type == 'multiple-choice':
+                improvements.append('Need to improve on multiple choice questions')
+            elif q_type == 'true-false':
+                improvements.append('Review true/false concepts')
+            elif q_type == 'short-answer':
+                improvements.append('Practice providing more accurate short answers')
+    
+    # Get class average for comparison
+    class_avg = QuizAttempt.objects.filter(
+        quiz=quiz,
+        completed=True
+    ).aggregate(avg=Avg('score'))['avg'] or 0
+    
+    # Calculate percentile
+    better_than_count = QuizAttempt.objects.filter(
+        quiz=quiz,
+        completed=True,
+        score__lt=attempt.score
+    ).count()
+    
+    total_attempts = QuizAttempt.objects.filter(
+        quiz=quiz,
+        completed=True
+    ).count()
+    
+    percentile = (better_than_count / max(total_attempts - 1, 1)) * 100
+    
+    context = {
+        'attempt': attempt,
+        'quiz': quiz,
+        'responses': responses,
+        'strengths': strengths,
+        'improvements': improvements,
+        'class_avg': class_avg,
+        'percentile': percentile,
+        'passed': attempt.is_passed()
+    }
+    
+    return render(request, 'quiz/student/quiz_results.html', context)
+
+def quiz_access(request, quiz_id=None):
+  if request.method == 'POST':
+      form = QuizAccessForm(request.POST)
+      if form.is_valid():
+          quiz_id = form.cleaned_data.get('quiz_id')
+          student_id = form.cleaned_data.get('student_id')
+          
+          try:
+              student = Student.objects.get(student_id=student_id)
+              quiz = Quiz.objects.get(id=quiz_id)
+              
+              # Check if the quiz is active
+              if quiz.status != 'active':
+                  messages.error(request, f'This quiz is not currently active. Current status: {quiz.get_status_display()}')
+                  return render(request, 'quiz/student/quiz_access.html', {'form': form})
+              
+              # Check if the student has reached the maximum number of attempts
+              attempts_count = QuizAttempt.objects.filter(student=student, quiz=quiz).count()
+              if attempts_count >= quiz.max_attempts:
+                  messages.error(request, f'You have reached the maximum number of attempts ({quiz.max_attempts}) for this quiz.')
+                  return render(request, 'quiz/student/quiz_access.html', {'form': form})
+              
+              # Check if the student has an incomplete attempt
+              incomplete_attempt = QuizAttempt.objects.filter(student=student, quiz=quiz, completed=False).first()
+              if incomplete_attempt:
+                  messages.info(request, 'You have an incomplete attempt. Continuing from where you left off.')
+                  return redirect('quiz/student/take_quiz', attempt_id=incomplete_attempt.id)
+              
+              # Create a new attempt
+              attempt = QuizAttempt.objects.create(
+                  student=student,
+                  quiz=quiz
+              )
+              
+              messages.success(request, f'Successfully accessed quiz: {quiz.title}')
+              return redirect('quiz/student/take_quiz', attempt_id=attempt.id)
+          except Student.DoesNotExist:
+              messages.error(request, 'Invalid student ID. Please check your student ID and try again.')
+          except Quiz.DoesNotExist:
+              messages.error(request, 'Invalid quiz ID. Please check the quiz ID and try again.')
+          except Exception as e:
+              messages.error(request, f'An error occurred: {str(e)}')
+  else:
+      # If quiz_id is provided in the URL, pre-fill the form
+      initial_data = {}
+      if quiz_id:
+          initial_data['quiz_id'] = quiz_id
+          # Try to get quiz details to show in the template
+          try:
+              quiz = Quiz.objects.get(id=quiz_id)
+              # Pass quiz to the template context
+              return render(request, 'quiz/student/quiz_access.html', {
+                  'form': QuizAccessForm(initial=initial_data),
+                  'quiz': quiz
+              })
+          except Quiz.DoesNotExist:
+              messages.error(request, 'The requested quiz does not exist.')
+      
+      form = QuizAccessForm(initial=initial_data)
+  
+  return render(request, 'quiz/student/quiz_access.html', {'form': form})
