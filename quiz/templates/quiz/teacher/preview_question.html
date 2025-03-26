@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Preview Question - {{ question.text|truncatechars:50 }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col">
+  <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+      <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span class="sr-only">Back</span>
+      </a>
+      <h1 class="text-lg font-semibold">Question Preview</h1>
+  </header>
+  
+  <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 max-w-4xl mx-auto w-full">
+      <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="font-medium text-amber-800">Preview Mode</span>
+          </div>
+          <p class="mt-1 text-sm text-amber-700">
+              This is how students will see this question. No answers will be submitted in preview mode.
+          </p>
+      </div>
+      
+      <div class="rounded-lg border bg-white shadow-sm">
+          <div class="p-6">
+              <h2 class="text-xl font-semibold mb-4">{{ question.text }}</h2>
+              
+              {% if question.image %}
+              <div class="mt-4 mb-6">
+                  <img src="{{ question.image.url }}" alt="Question image" class="max-h-64 rounded-md object-contain">
+              </div>
+              {% endif %}
+              
+              {% if question.question_type == 'multiple-choice' %}
+              <div class="mt-4">
+                  <div class="space-y-3">
+                      {% for answer in question.answers.all %}
+                      <div class="relative">
+                          <input type="radio" name="answer" id="answer_{{ answer.id }}" class="sr-only" disabled>
+                          <label for="answer_{{ answer.id }}" class="block p-3 border rounded-md cursor-pointer transition-colors hover:bg-gray-50">
+                              {{ answer.text }}
+                          </label>
+                      </div>
+                      {% endfor %}
+                  </div>
+              </div>
+              {% elif question.question_type == 'true-false' %}
+              <div class="mt-4">
+                  <div class="space-y-3">
+                      <div class="relative">
+                          <input type="radio" name="answer" id="answer_true" class="sr-only" disabled>
+                          <label for="answer_true" class="block p-3 border rounded-md cursor-pointer transition-colors hover:bg-gray-50">
+                              True
+                          </label>
+                      </div>
+                      <div class="relative">
+                          <input type="radio" name="answer" id="answer_false" class="sr-only" disabled>
+                          <label for="answer_false" class="block p-3 border rounded-md cursor-pointer transition-colors hover:bg-gray-50">
+                              False
+                          </label>
+                      </div>
+                  </div>
+              </div>
+              {% elif question.question_type == 'short-answer' %}
+              <div class="mt-4">
+                  <label for="short-answer" class="block text-sm font-medium text-gray-700 mb-2">Your Answer</label>
+                  <input type="text" id="short-answer" placeholder="Type your answer here" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500" disabled>
+              </div>
+              {% endif %}
+          </div>
+          
+          <div class="flex flex-col gap-3 p-6 border-t">
+              <div class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                      <p class="font-medium text-gray-900">Correct Answer:</p>
+                      <p class="text-gray-700">
+                          {% if question.question_type == 'multiple-choice' or question.question_type == 'true-false' %}
+                              {% for answer in question.answers.all %}
+                                  {% if answer.is_correct %}{{ answer.text }}{% endif %}
+                              {% endfor %}
+                          {% elif question.question_type == 'short-answer' %}
+                              {% for answer in question.answers.all %}
+                                  {% if answer.is_correct %}{{ answer.text }}{% endif %}
+                              {% endfor %}
+                          {% endif %}
+                      </p>
+                  </div>
+              </div>
+              
+              {% if question.explanation %}
+              <div class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                      <p class="font-medium text-gray-900">Explanation:</p>
+                      <p class="text-gray-700">{{ question.explanation }}</p>
+                  </div>
+              </div>
+              {% endif %}
+              
+              <div class="flex items-start gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div>
+                      <p class="font-medium text-gray-900">Question Details:</p>
+                      <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                          <dt class="text-gray-500">Type:</dt>
+                          <dd>{{ question.get_question_type_display }}</dd>
+                          <dt class="text-gray-500">Points:</dt>
+                          <dd>{{ question.points }}</dd>
+                      </dl>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="flex justify-between p-6 border-t bg-gray-50">
+              <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  Back to Quiz
+              </a>
+              <a href="#" onclick="window.history.back(); return false;" class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                  Return
+              </a>
+          </div>
+      </div>
+  </main>
+</div>
+{% endblock %}
+

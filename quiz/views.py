@@ -4,7 +4,7 @@ from django.db.models import Avg, F
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from .models import Teacher, Student, Quiz, QuizAttempt, QuestionResponse, Answer
+from .models import Teacher, Student, Quiz, QuizAttempt, QuestionResponse, Answer, Question
 from .forms import (
      
     QuizForm, QuestionForm, MultipleChoiceAnswerFormSet,
@@ -559,4 +559,53 @@ def teacher_leaderboard(request):
     
     return render(request, 'quiz/teacher/leaderboard.html', context)
 
-# Student Views
+
+
+# preview quiz
+# Add this new view function for previewing quiz questions
+@login_required
+def preview_question(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    
+    # Check if the user has permission to preview this question
+    if not request.user.is_teacher or question.quiz.teacher.user != request.user:
+        messages.error(request, "You don't have permission to preview this question.")
+        return redirect('teacher_dashboard')
+    
+    # Determine question type and prepare context
+    context = {
+        'question': question,
+        'quiz': question.quiz,
+        'preview_mode': True,
+    }
+    
+    return render(request, 'quiz/teacher/preview_question.html', context)
+
+
+
+@login_required
+def preview_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    
+    # Check if the user has permission to preview this quiz
+    if not request.user.is_teacher or quiz.teacher.user != request.user:
+        messages.error(request, "You don't have permission to preview this quiz.")
+        return redirect('teacher_dashboard')
+    
+    # Get all questions for this quiz
+    questions = list(quiz.get_questions())
+    
+    # Apply shuffling if the quiz has that setting
+    if quiz.shuffle_questions:
+        import random
+        random.shuffle(questions)
+    
+    context = {
+        'quiz': quiz,
+        'questions': questions,
+        'preview_mode': True,
+        'time_limit_seconds': quiz.time_limit * 60,
+        'prevent_tab_switch': quiz.prevent_tab_switch
+    }
+    
+    return render(request, 'quiz/teacher/preview_quiz.html', context)

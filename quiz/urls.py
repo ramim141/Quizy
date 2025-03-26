@@ -11,6 +11,9 @@ urlpatterns = [
     path('teacher/quiz/<uuid:pk>/edit/', views.QuizUpdateView.as_view(), name='quiz_edit'),
     path('teacher/quiz/<uuid:quiz_id>/add-question/', views.add_question, name='add_question'),
     path('teacher/leaderboard/', views.teacher_leaderboard, name='teacher_leaderboard'),
+    path('teacher/questions/<int:question_id>/preview/', views.preview_question, name='preview_question'),
+    
+    path('teacher/quizzes/<uuid:quiz_id>/preview/', views.preview_quiz, name='preview_quiz'),
     
     
     
