@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Delete Quiz - {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col">
+  <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+      <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span class="sr-only">Back</span>
+      </a>
+      <h1 class="text-lg font-semibold">Delete Quiz</h1>
+  </header>
+  
+  <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <div class="mx-auto max-w-md w-full">
+          <div class="rounded-lg border bg-white shadow-sm overflow-hidden">
+              <div class="p-6 border-b border-red-100 bg-red-50">
+                  <div class="flex items-center gap-3">
+                      <div class="rounded-full bg-red-100 p-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                      </div>
+                      <h2 class="text-xl font-bold text-red-700">Delete Quiz</h2>
+                  </div>
+                  <p class="mt-2 text-red-600">This action cannot be undone. Please confirm that you want to permanently delete this quiz.</p>
+              </div>
+              
+              <div class="p-6">
+                  <div class="mb-6">
+                      <h3 class="text-lg font-semibold text-gray-900">Quiz Details</h3>
+                      <div class="mt-2 space-y-2">
+                          <div>
+                              <span class="font-medium">Title:</span>
+                              <span class="ml-2">{{ quiz.title }}</span>
+                          </div>
+                          <div>
+                              <span class="font-medium">Questions:</span>
+                              <span class="ml-2">{{ quiz.get_question_count }}</span>
+                          </div>
+                          <div>
+                              <span class="font-medium">Created:</span>
+                              <span class="ml-2">{{ quiz.created_at|date:"F j, Y" }}</span>
+                          </div>
+                          <div>
+                              <span class="font-medium">Status:</span>
+                              <span class="ml-2">{{ quiz.get_status_display }}</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div class="mb-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                      <div class="flex items-start">
+                          <div class="flex-shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                          </div>
+                          <div class="ml-3">
+                              <h3 class="text-sm font-medium text-yellow-800">Warning</h3>
+                              <div class="mt-2 text-sm text-yellow-700">
+                                  <p>Deleting this quiz will also delete:</p>
+                                  <ul class="list-disc pl-5 space-y-1 mt-1">
+                                      <li>All questions and answers</li>
+                                      <li>All student attempts and responses</li>
+                                      <li>All associated analytics data</li>
+                                  </ul>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <form method="post" class="mt-6">
+                      {% csrf_token %}
+                      <div class="flex flex-col gap-4">
+                          <div class="flex items-center">
+                              <input id="confirm" name="confirm" type="checkbox" required class="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                              <label for="confirm" class="ml-2 block text-sm text-gray-900">
+                                  I understand that this action cannot be undone
+                              </label>
+                          </div>
+                          
+                          <div class="flex justify-between">
+                              <a href="{% url 'quiz_detail' pk=quiz.pk %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                  Cancel
+                              </a>
+                              <button type="submit" class="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                                  Delete Quiz
+                              </button>
+                          </div>
+                      </div>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </main>
+</div>
+{% endblock %}
+

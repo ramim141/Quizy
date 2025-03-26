@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Avg
-from django.views.generic import DetailView, CreateView, UpdateView
+from django.db.models import Avg, F
+from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Teacher, Student, Quiz, QuizAttempt, QuestionResponse, Answer
@@ -261,7 +261,7 @@ def take_quiz(request, attempt_id):
         attempt.score = attempt.calculate_score()
         attempt.save()
         
-        return redirect('quiz_results', attempt_id=attempt.id)
+        return redirect('quiz/student/quiz_results', attempt_id=attempt.id)
     
     context = {
         'attempt': attempt,
@@ -418,3 +418,145 @@ def quiz_access(request, quiz_id=None):
       form = QuizAccessForm(initial=initial_data)
   
   return render(request, 'quiz/student/quiz_access.html', {'form': form})
+
+
+class QuizDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Quiz
+    template_name = 'quiz/teacher/quiz_confirm_delete.html'
+    success_url = reverse_lazy('teacher_dashboard')
+    
+    def test_func(self):
+        quiz = self.get_object()
+        return self.request.user.is_teacher and quiz.teacher.user == self.request.user
+    
+    def delete(self, request, *args, **kwargs):
+        quiz = self.get_object()
+        messages.success(request, f'Quiz "{quiz.title}" has been deleted successfully.')
+        return super().delete(request, *args, **kwargs)
+    
+    def handle_no_permission(self):
+        messages.error(self.request, "You don't have permission to delete this quiz.")
+        return super().handle_no_permission()
+
+
+
+# Add this new view function for the teacher leaderboard
+@login_required
+def teacher_leaderboard(request):
+    if not request.user.is_teacher:
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('account:login')
+    
+    teacher = Teacher.objects.get(user=request.user)
+    
+    # Get filter parameters
+    quiz_filter = request.GET.get('quiz', None)
+    time_period = request.GET.get('period', 'all')  # all, month, week
+    
+    # Base query - get all completed attempts for this teacher's quizzes
+    attempts = QuizAttempt.objects.filter(
+        quiz__teacher=teacher,
+        completed=True
+    )
+    
+    # Apply filters
+    if quiz_filter:
+        attempts = attempts.filter(quiz_id=quiz_filter)
+    
+    if time_period == 'month':
+        one_month_ago = timezone.now() - timezone.timedelta(days=30)
+        attempts = attempts.filter(end_time__gte=one_month_ago)
+    elif time_period == 'week':
+        one_week_ago = timezone.now() - timezone.timedelta(days=7)
+        attempts = attempts.filter(end_time__gte=one_week_ago)
+    
+    # Get all quizzes for the filter dropdown
+    quizzes = Quiz.objects.filter(teacher=teacher)
+    
+    # Get top students by average score
+    student_stats = []
+    
+    # Get unique students who have taken this teacher's quizzes
+    students = Student.objects.filter(quiz_attempts__in=attempts).distinct()
+    
+    for student in students:
+        student_attempts = attempts.filter(student=student)
+        avg_score = student_attempts.aggregate(avg=Avg('score'))['avg'] or 0
+        total_attempts = student_attempts.count()
+        total_passed = student_attempts.filter(score__gte=F('quiz__passing_score')).count()
+        pass_rate = (total_passed / total_attempts * 100) if total_attempts > 0 else 0
+        
+        # Get the student's best quiz
+        best_attempt = student_attempts.order_by('-score').first()
+        best_quiz = best_attempt.quiz.title if best_attempt else "N/A"
+        best_score = best_attempt.score if best_attempt else 0
+        
+        # Calculate average time per quiz
+        total_time = timezone.timedelta(seconds=0)
+        for attempt in student_attempts:
+            if attempt.end_time and attempt.start_time:
+                total_time += attempt.end_time - attempt.start_time
+        
+        avg_time = total_time.total_seconds() / total_attempts if total_attempts > 0 else 0
+        avg_time_minutes = round(avg_time / 60, 1)
+        
+        student_stats.append({
+            'student': student,
+            'avg_score': avg_score,
+            'total_attempts': total_attempts,
+            'pass_rate': pass_rate,
+            'best_quiz': best_quiz,
+            'best_score': best_score,
+            'avg_time_minutes': avg_time_minutes
+        })
+    
+    # Sort by average score (descending)
+    student_stats.sort(key=lambda x: x['avg_score'], reverse=True)
+    
+    # Add rank to each student
+    for i, stat in enumerate(student_stats):
+        stat['rank'] = i + 1
+    
+    # Calculate overall statistics
+    total_attempts = attempts.count()
+    avg_score_overall = attempts.aggregate(avg=Avg('score'))['avg'] or 0
+    total_passed_overall = attempts.filter(score__gte=F('quiz__passing_score')).count()
+    pass_rate_overall = (total_passed_overall / total_attempts * 100) if total_attempts > 0 else 0
+    
+    # Get quiz completion data for chart
+    quiz_completion_data = []
+    for quiz in quizzes:
+        quiz_attempts = attempts.filter(quiz=quiz)
+        total_quiz_attempts = quiz_attempts.count()
+        if total_quiz_attempts > 0:
+            avg_quiz_score = quiz_attempts.aggregate(avg=Avg('score'))['avg'] or 0
+            quiz_completion_data.append({
+                'quiz': quiz.title,
+                'attempts': total_quiz_attempts,
+                'avg_score': round(avg_quiz_score, 1)
+            })
+    
+    # Get score distribution data for chart
+    score_ranges = [
+        {'range': '0-20%', 'count': attempts.filter(score__lt=20).count()},
+        {'range': '21-40%', 'count': attempts.filter(score__gte=20, score__lt=40).count()},
+        {'range': '41-60%', 'count': attempts.filter(score__gte=40, score__lt=60).count()},
+        {'range': '61-80%', 'count': attempts.filter(score__gte=60, score__lt=80).count()},
+        {'range': '81-100%', 'count': attempts.filter(score__gte=80).count()},
+    ]
+    
+    context = {
+        'student_stats': student_stats,
+        'quizzes': quizzes,
+        'selected_quiz': quiz_filter,
+        'selected_period': time_period,
+        'total_attempts': total_attempts,
+        'avg_score_overall': round(avg_score_overall, 1),
+        'pass_rate_overall': round(pass_rate_overall, 1),
+        'quiz_completion_data': quiz_completion_data,
+        'score_ranges': score_ranges,
+    }
+    
+    return render(request, 'quiz/teacher/leaderboard.html', context)
+
+# Student Views

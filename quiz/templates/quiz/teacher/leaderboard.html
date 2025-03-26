@@ -1,0 +1,255 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Leaderboard - QuizMaster{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen w-full flex-col">
+  <header class="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
+      <a href="{% url 'teacher_dashboard' %}" class="inline-flex items-center justify-center rounded-md p-2 text-gray-700 hover:bg-gray-100">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span class="sr-only">Back</span>
+      </a>
+      <h1 class="text-lg font-semibold">Student Leaderboard</h1>
+  </header>
+  
+  <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <!-- Filters -->
+      <div class="rounded-lg border bg-white shadow-sm p-4">
+          <form method="get" class="flex flex-wrap gap-4 items-end">
+              <div class="space-y-2">
+                  <label for="quiz" class="block text-sm font-medium text-gray-700">Filter by Quiz</label>
+                  <select id="quiz" name="quiz" class="rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                      <option value="">All Quizzes</option>
+                      {% for quiz in quizzes %}
+                      <option value="{{ quiz.id }}" {% if selected_quiz == quiz.id|stringformat:"s" %}selected{% endif %}>{{ quiz.title }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              
+              <div class="space-y-2">
+                  <label for="period" class="block text-sm font-medium text-gray-700">Time Period</label>
+                  <select id="period" name="period" class="rounded-md border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500">
+                      <option value="all" {% if selected_period == 'all' %}selected{% endif %}>All Time</option>
+                      <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Last 30 Days</option>
+                      <option value="week" {% if selected_period == 'week' %}selected{% endif %}>Last 7 Days</option>
+                  </select>
+              </div>
+              
+              <button type="submit" class="inline-flex items-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                  </svg>
+                  Apply Filters
+              </button>
+              
+              <a href="{% url 'teacher_leaderboard' %}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Reset
+              </a>
+          </form>
+      </div>
+      
+      <!-- Stats Cards -->
+      <div class="grid gap-4 md:grid-cols-3">
+          <div class="rounded-lg border bg-white shadow-sm p-6">
+              <div class="flex items-center gap-4">
+                  <div class="rounded-full bg-blue-100 p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                  </div>
+                  <div>
+                      <h3 class="text-lg font-semibold text-gray-900">Average Score</h3>
+                      <p class="text-3xl font-bold text-blue-600">{{ avg_score_overall }}%</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="rounded-lg border bg-white shadow-sm p-6">
+              <div class="flex items-center gap-4">
+                  <div class="rounded-full bg-green-100 p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                  </div>
+                  <div>
+                      <h3 class="text-lg font-semibold text-gray-900">Pass Rate</h3>
+                      <p class="text-3xl font-bold text-green-600">{{ pass_rate_overall }}%</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="rounded-lg border bg-white shadow-sm p-6">
+              <div class="flex items-center gap-4">
+                  <div class="rounded-full bg-purple-100 p-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                  </div>
+                  <div>
+                      <h3 class="text-lg font-semibold text-gray-900">Total Attempts</h3>
+                      <p class="text-3xl font-bold text-purple-600">{{ total_attempts }}</p>
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+      <!-- Charts -->
+      <div class="grid gap-4 md:grid-cols-2">
+          <!-- Score Distribution Chart -->
+          <div class="rounded-lg border bg-white shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Score Distribution</h3>
+              <div class="h-64">
+                  <div class="h-full flex items-end justify-around">
+                      {% for range in score_ranges %}
+                      <div class="flex flex-col items-center">
+                          <div class="w-16 bg-gradient-to-t from-blue-600 to-purple-600 rounded-t-md" style="height: {% if range.count %}{{ range.count|default:1|floatformat:0 }}{% else %}1{% endif %}px; min-height: 20px;"></div>
+                          <div class="mt-2 text-xs font-medium">{{ range.range }}</div>
+                          <div class="text-xs text-gray-500">{{ range.count }} students</div>
+                      </div>
+                      {% endfor %}
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Quiz Completion Chart -->
+          <div class="rounded-lg border bg-white shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Quiz Performance</h3>
+              <div class="h-64">
+                  <div class="h-full flex items-end justify-around">
+                      {% for quiz_data in quiz_completion_data %}
+                      <div class="flex flex-col items-center">
+                          <div class="w-16 bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-md" style="height: {% if quiz_data.avg_score %}{{ quiz_data.avg_score }}{% else %}1{% endif %}px; min-height: 20px;"></div>
+                          <div class="mt-2 text-xs font-medium truncate max-w-[80px] text-center">{{ quiz_data.quiz }}</div>
+                          <div class="text-xs text-gray-500">{{ quiz_data.avg_score }}% avg</div>
+                      </div>
+                      {% empty %}
+                      <div class="flex items-center justify-center w-full h-full">
+                          <p class="text-gray-500">No quiz data available</p>
+                      </div>
+                      {% endfor %}
+                  </div>
+              </div>
+          </div>
+      </div>
+      
+      <!-- Leaderboard Table -->
+      <div class="rounded-lg border bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold text-gray-900">Student Rankings</h3>
+              <p class="text-sm text-gray-500 mt-1">Based on average quiz scores</p>
+          </div>
+          
+          <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                  <thead>
+                      <tr class="bg-gray-50 text-left">
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Avg. Score</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Pass Rate</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Quizzes Taken</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Best Quiz</th>
+                          <th class="px-6 py-3 font-medium text-gray-500 uppercase tracking-wider">Avg. Time</th>
+                      </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                      {% for stat in student_stats %}
+                      <tr class="{% if stat.rank <= 3 %}bg-yellow-50{% endif %} hover:bg-gray-50">
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              {% if stat.rank == 1 %}
+                              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100 text-yellow-800 font-bold">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                  </svg>
+                              </div>
+                              {% elif stat.rank == 2 %}
+                              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-800 font-bold">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                  </svg>
+                              </div>
+                              {% elif stat.rank == 3 %}
+                              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-50 text-yellow-700 font-bold">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                  </svg>
+                              </div>
+                              {% else %}
+                              <span class="font-medium">{{ stat.rank }}</span>
+                              {% endif %}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              <div class="flex items-center">
+                                  <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                      <span class="font-medium text-gray-600">{{ stat.student.user.username|slice:":1"|upper }}</span>
+                                  </div>
+                                  <div class="ml-4">
+                                      <div class="font-medium text-gray-900">{{ stat.student.user.username }}</div>
+                                      <div class="text-gray-500">ID: {{ stat.student.student_id }}</div>
+                                  </div>
+                              </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              <div class="text-lg font-semibold 
+                                  {% if stat.avg_score >= 90 %}text-green-600
+                                  {% elif stat.avg_score >= 70 %}text-blue-600
+                                  {% elif stat.avg_score >= 60 %}text-yellow-600
+                                  {% else %}text-red-600{% endif %}">
+                                  {{ stat.avg_score|floatformat:1 }}%
+                              </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              <div class="flex items-center">
+                                  <div class="w-16 bg-gray-200 rounded-full h-2.5 mr-2">
+                                      <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ stat.pass_rate }}%"></div>
+                                  </div>
+                                  <span>{{ stat.pass_rate|floatformat:0 }}%</span>
+                              </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-center">
+                              {{ stat.total_attempts }}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              <div>{{ stat.best_quiz }}</div>
+                              <div class="text-sm text-gray-500">{{ stat.best_score|floatformat:0 }}%</div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap">
+                              {{ stat.avg_time_minutes }} min
+                          </td>
+                      </tr>
+                      {% empty %}
+                      <tr>
+                          <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                              No student data available for the selected filters.
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          </div>
+          
+          {% if student_stats %}
+          <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+              <div class="text-sm text-gray-500">
+                  Showing {{ student_stats|length }} students
+              </div>
+              <div>
+                  <button class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Results
+                  </button>
+              </div>
+          </div>
+          {% endif %}
+      </div>
+  </main>
+</div>
+{% endblock %}
+
