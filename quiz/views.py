@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.db.models import Avg, F
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -581,6 +583,7 @@ def preview_question(request, question_id):
     
     return render(request, 'quiz/teacher/preview_question.html', context)
 
+# update and delete question
 
 
 @login_required
@@ -609,3 +612,155 @@ def preview_quiz(request, quiz_id):
     }
     
     return render(request, 'quiz/teacher/preview_quiz.html', context)
+
+
+
+@login_required
+def mark_quiz_completed(request, quiz_id):
+    """
+    View to mark a quiz as completed
+    """
+    if not request.user.is_teacher:
+        messages.error(request, "You don't have permission to mark quizzes as completed.")
+        return redirect('login')
+        
+    quiz = get_object_or_404(Quiz, pk=quiz_id, teacher__user=request.user)
+    
+    # Update the quiz status to completed
+    quiz.status = 'completed'
+    quiz.save()
+    
+    messages.success(request, f"Quiz '{quiz.title}' has been marked as completed.")
+    return redirect('teacher_dashboard')
+
+@login_required
+
+def mark_quiz_active(request, quiz_id):
+    """
+    View to mark a quiz as active
+    """
+    if not request.user.is_teacher:
+        messages.error(request, "You don't have permission to mark quizzes as active.") 
+        return redirect('login')
+
+    quiz = get_object_or_404(Quiz, pk=quiz_id, teacher__user=request.user)
+
+    # Update the quiz status to active
+    quiz.status = 'active'
+    quiz.save()
+
+    messages.success(request, f"Quiz '{quiz.title}' has been marked as active.")
+    return redirect('teacher_dashboard')
+
+
+@login_required
+def edit_question(request, quiz_id, question_id):
+    """View for editing a question."""
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    question = get_object_or_404(Question, pk=question_id)
+    
+    # Check if the user is the owner of the quiz
+    if quiz.created_by != request.user:
+        return HttpResponseForbidden("You don't have permission to edit this question.")
+    
+    if request.method == 'POST':
+        form = QuestionForm(request.POST, request.FILES, instance=question)
+        
+        # Handle different question types
+        if question.question_type == 'multiple-choice':
+            answer_formset = MultipleChoiceAnswerFormSet(request.POST, instance=question)
+            short_answer_form = None
+        elif question.question_type == 'true-false':
+            answer_formset = TrueFalseAnswerFormSet(request.POST, instance=question)
+            short_answer_form = None
+        else:  # short-answer
+            answer_formset = None
+            short_answer_form = ShortAnswerForm(request.POST)
+        
+        # Validate and save forms
+        if form.is_valid():
+            # Save question
+            question = form.save(commit=False)
+            question.quiz = quiz
+            question.save()
+            
+            # Handle answer formsets or short answer form
+            if question.question_type in ['multiple-choice', 'true-false']:
+                if answer_formset.is_valid():
+                    answer_formset.save()
+                    messages.success(request, "Question updated successfully.")
+                    return redirect('preview_quiz', pk=quiz_id)
+                else:
+                    messages.error(request, "Please correct the errors in the answer choices.")
+            else:  # short-answer
+                if short_answer_form.is_valid():
+                    # Get or create the correct answer for short answer
+                    correct_answer = short_answer_form.cleaned_data['correct_answer']
+                    Answer.objects.filter(question=question).delete()  # Remove old answers
+                    Answer.objects.create(
+                        question=question,
+                        text=correct_answer,
+                        is_correct=True
+                    )
+                    messages.success(request, "Question updated successfully.")
+                    return redirect('preview_quiz', pk=quiz_id)
+                else:
+                    messages.error(request, "Please provide a correct answer.")
+        else:
+            messages.error(request, "Please correct the errors in the question form.")
+    else:
+        # GET request - prepare forms
+        form = QuestionForm(instance=question)
+        
+        # Prepare appropriate formset based on question type
+        if question.question_type == 'multiple-choice':
+            answer_formset = MultipleChoiceAnswerFormSet(instance=question)
+            short_answer_form = None
+        elif question.question_type == 'true-false':
+            answer_formset = TrueFalseAnswerFormSet(instance=question)
+            short_answer_form = None
+        else:  # short-answer
+            answer_formset = None
+            # Get the correct answer for short answer questions
+            correct_answer = Answer.objects.filter(question=question, is_correct=True).first()
+            short_answer_form = ShortAnswerForm(
+                initial={'correct_answer': correct_answer.text if correct_answer else ''}
+            )
+    
+    return render(request, 'quiz/teacher/edit_question.html', {
+        'form': form,
+        'answer_formset': answer_formset,
+        'short_answer_form': short_answer_form,
+        'quiz': quiz,
+        'question': question
+    })
+
+@login_required
+@require_POST
+def delete_question(request, quiz_id, question_id):
+    """View for deleting a question."""
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    question = get_object_or_404(Question, pk=question_id)
+    
+    # Check if the user is the owner of the quiz
+    if quiz.created_by != request.user:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': "You don't have permission to delete this question."}, status=403)
+        return HttpResponseForbidden("You don't have permission to delete this question.")
+    
+    # Store question number for message
+    question_number = question.id
+    
+    # Delete the question
+    question.delete()
+    
+    # Return JSON response for AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': f"Question {question_number} deleted successfully."
+        })
+    
+    # For non-AJAX requests, redirect with message
+    messages.success(request, f"Question {question_number} deleted successfully.")
+    return redirect('preview_quiz', pk=quiz_id)

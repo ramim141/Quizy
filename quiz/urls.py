@@ -28,5 +28,12 @@ urlpatterns = [
     
      # Quiz Deletion URL
     path('quizzes/<uuid:pk>/delete/', views.QuizDeleteView.as_view(), name='quiz_delete'),
+    path('quiz/<uuid:quiz_id>/mark-completed/', views.mark_quiz_completed, name='mark_quiz_completed'),
+    path('quiz/<uuid:quiz_id>/mark-active/' , views.mark_quiz_active, name='mark_quiz_active'),
+    
+    path('teacher/quizzes/<uuid:quiz_id>/questions/<int:question_id>/edit/', 
+         views.edit_question, name='edit_question'),
+    path('teacher/quizzes/<uuid:quiz_id>/questions/<int:question_id>/delete/', 
+         views.delete_question, name='delete_question'),
     
 ]
