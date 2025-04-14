@@ -65,13 +65,14 @@ class QuizUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Quiz
     form_class = QuizForm
     template_name = 'quiz/teacher/quiz_form.html'
+    pk_url_kwarg = 'quiz_id'  # This matches our URL pattern
     
     def test_func(self):
         quiz = self.get_object()
         return self.request.user.is_teacher and quiz.teacher.user == self.request.user
     
     def get_success_url(self):
-        return reverse_lazy('quiz_detail', kwargs={'pk': self.object.pk})
+        return reverse_lazy('quiz_detail', kwargs={'quiz_id': self.object.pk})
 
 
 
@@ -79,6 +80,7 @@ class QuizDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Quiz
     template_name = 'quiz/teacher/quiz_details.html'
     context_object_name = 'quiz'
+    pk_url_kwarg = 'quiz_id'  # This matches our URL pattern
     
     def test_func(self):
         quiz = self.get_object()
@@ -142,30 +144,81 @@ def add_question(request, quiz_id):
         
         if form.is_valid():
             question_type = form.cleaned_data.get('question_type')
+            
+            # Validate answers based on question type
+            is_valid = True
+            error_message = None
+            
+            if question_type == 'multiple-choice':
+                # Check if at least two options are provided
+                options_count = sum(1 for i in range(4) if request.POST.get(f'answer_text_{i}'))
+                if options_count < 2:
+                    is_valid = False
+                    error_message = "Multiple choice questions must have at least two options."
+                # Check if a correct answer is selected
+                elif not request.POST.get('correct_answer'):
+                    is_valid = False
+                    error_message = "Please select a correct answer for multiple choice question."
+            elif question_type == 'true-false':
+                if not request.POST.get('tf_correct_answer'):
+                    is_valid = False
+                    error_message = "Please select either True or False as the correct answer."
+            elif question_type == 'short-answer':
+                # Check if correct answer is provided
+                if not request.POST.get('correct_answer'):
+                    is_valid = False
+                    error_message = "Please provide the correct answer for short answer question."
+            
+            if not is_valid:
+                messages.error(request, error_message)
+                return render(request, 'quiz/teacher/add_question.html', {
+                    'form': form,
+                    'quiz': quiz
+                })
+            
             question = form.save(commit=False)
             question.quiz = quiz
             question.order = quiz.get_question_count() + 1
             question.save()
             
             if question_type == 'multiple-choice':
-                formset = MultipleChoiceAnswerFormSet(request.POST, instance=question)
-                if formset.is_valid():
-                    formset.save()
+                # Process multiple choice answers
+                for i in range(4):  # We have 4 options in the template
+                    answer_text = request.POST.get(f'answer_text_{i}')
+                    if answer_text:  # Only create answers that have text
+                        is_correct = request.POST.get('correct_answer') == str(i)
+                        Answer.objects.create(
+                            question=question,
+                            text=answer_text,
+                            is_correct=is_correct
+                        )
+
             elif question_type == 'true-false':
-                formset = TrueFalseAnswerFormSet(request.POST, instance=question)
-                if formset.is_valid():
-                    formset.save()
+                # Process true/false answer
+                is_true = request.POST.get('tf_correct_answer') == 'true'
+                Answer.objects.create(
+                    question=question,
+                    text='True',
+                    is_correct=is_true
+                )
+                Answer.objects.create(
+                    question=question,
+                    text='False',
+                    is_correct=not is_true
+                )
+
             elif question_type == 'short-answer':
-                answer_form = ShortAnswerForm(request.POST)
-                if answer_form.is_valid():
-                    answer = Answer(
+                # Process short answer
+                answer_text = request.POST.get('correct_answer')
+                if answer_text:
+                    Answer.objects.create(
                         question=question,
-                        text=answer_form.cleaned_data.get('correct_answer'),
+                        text=answer_text,
                         is_correct=True
                     )
-                    answer.save()
             
-            return redirect('quiz_detail', pk=quiz.pk)
+            messages.success(request, 'Question added successfully!')
+            return redirect('quiz_detail', quiz_id=quiz.pk)
     else:
         form = QuestionForm()
     
@@ -426,6 +479,7 @@ class QuizDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Quiz
     template_name = 'quiz/teacher/quiz_confirm_delete.html'
     success_url = reverse_lazy('teacher_dashboard')
+    pk_url_kwarg = 'quiz_id'
     
     def test_func(self):
         quiz = self.get_object()
@@ -587,8 +641,8 @@ def preview_question(request, question_id):
 
 
 @login_required
-def preview_quiz(request, quiz_id):
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
+def preview_quiz(request, pk):
+    quiz = get_object_or_404(Quiz, pk=pk)
     
     # Check if the user has permission to preview this quiz
     if not request.user.is_teacher or quiz.teacher.user != request.user:
@@ -653,14 +707,26 @@ def mark_quiz_active(request, quiz_id):
     return redirect('teacher_dashboard')
 
 
+# Add these imports at the top of your views.py file
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_POST
+from django.urls import reverse
+from .models import Quiz, Question, Answer
+from .forms import QuestionForm, MultipleChoiceAnswerFormSet, TrueFalseAnswerFormSet, ShortAnswerForm
+
+# Existing views...
+
 @login_required
 def edit_question(request, quiz_id, question_id):
     """View for editing a question."""
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-    question = get_object_or_404(Question, pk=question_id)
+    question = get_object_or_404(Question, pk=question_id, quiz=quiz)
     
-    # Check if the user is the owner of the quiz
-    if quiz.created_by != request.user:
+    # Check if the user is the teacher of the quiz
+    if request.user.teacher != quiz.teacher:
         return HttpResponseForbidden("You don't have permission to edit this question.")
     
     if request.method == 'POST':
@@ -679,7 +745,41 @@ def edit_question(request, quiz_id, question_id):
         
         # Validate and save forms
         if form.is_valid():
-            # Save question
+            question_type = form.cleaned_data.get('question_type')
+            
+            # Validate answers based on question type
+            is_valid = True
+            error_message = None
+            
+            if question_type == 'multiple-choice':
+                # Check if at least two options are provided
+                answers = request.POST.getlist('answers-0-text')  # MultipleChoiceAnswerFormSet field
+                filled_answers = [a for a in answers if a.strip()]
+                if len(filled_answers) < 2:
+                    is_valid = False
+                    error_message = "Multiple choice questions must have at least two options."
+                # We don't need to check for correct answer here as formset validation handles it
+            elif question_type == 'true-false':
+                answer_formset = TrueFalseAnswerFormSet(request.POST, instance=question)
+                if answer_formset.is_valid():
+                    if not any(f.cleaned_data.get('is_correct') for f in answer_formset.forms):
+                        is_valid = False
+                        error_message = "Please select either True or False as the correct answer."
+            elif question_type == 'short-answer':
+                if not short_answer_form.is_valid() or not short_answer_form.cleaned_data.get('correct_answer'):
+                    is_valid = False
+                    error_message = "Please provide the correct answer for short answer question."
+            
+            if not is_valid:
+                messages.error(request, error_message)
+                return render(request, 'quiz/teacher/edit_question.html', {
+                    'form': form,
+                    'answer_formset': answer_formset,
+                    'short_answer_form': short_answer_form,
+                    'quiz': quiz,
+                    'question': question
+                })
+            
             question = form.save(commit=False)
             question.quiz = quiz
             question.save()
@@ -722,10 +822,9 @@ def edit_question(request, quiz_id, question_id):
         else:  # short-answer
             answer_formset = None
             # Get the correct answer for short answer questions
-            correct_answer = Answer.objects.filter(question=question, is_correct=True).first()
-            short_answer_form = ShortAnswerForm(
-                initial={'correct_answer': correct_answer.text if correct_answer else ''}
-            )
+            correct_answer = question.answers.filter(is_correct=True).first()
+            initial_data = {'correct_answer': correct_answer.text} if correct_answer else {'correct_answer': ''}
+            short_answer_form = ShortAnswerForm(initial=initial_data)
     
     return render(request, 'quiz/teacher/edit_question.html', {
         'form': form,
@@ -740,16 +839,16 @@ def edit_question(request, quiz_id, question_id):
 def delete_question(request, quiz_id, question_id):
     """View for deleting a question."""
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-    question = get_object_or_404(Question, pk=question_id)
+    question = get_object_or_404(Question, pk=question_id, quiz=quiz)
     
-    # Check if the user is the owner of the quiz
-    if quiz.created_by != request.user:
+    # Check if the user is the teacher of the quiz
+    if request.user.teacher != quiz.teacher:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'error', 'message': "You don't have permission to delete this question."}, status=403)
         return HttpResponseForbidden("You don't have permission to delete this question.")
     
     # Store question number for message
-    question_number = question.id
+    question_number = question.order or question.id
     
     # Delete the question
     question.delete()

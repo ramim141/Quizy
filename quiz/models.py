@@ -32,10 +32,10 @@ class Quiz(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.tittle
+        return self.title
 
     def get_absolute_url(self):
-        return reverse('quiz_detail', kwargs={'pk': self.pk})
+        return reverse('quiz_detail', kwargs={'quiz_id': self.pk})
 
     def get_questions(self):
         return self.questions.all() 
